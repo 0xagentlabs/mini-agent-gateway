@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/sashabaranov/go-openai"
@@ -23,7 +22,7 @@ func New(apiKey string) *Agent {
 	return &Agent{
 		client: client,
 		tools:  tools.NewRegistry(),
-		model:  openai.GPT4oMini, // 使用 GPT-4o-mini 降低成本
+		model:  "gpt-4o-mini", // 使用 GPT-4o-mini 降低成本
 	}
 }
 

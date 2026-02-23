@@ -3,6 +3,8 @@ package session
 import (
 	"sync"
 	"time"
+
+	"github.com/0xagentlabs/mini-agent-gateway/pkg/agent"
 )
 
 // Session 用户会话
@@ -69,20 +71,11 @@ func (s *Session) AddMessage(role, content string) {
 }
 
 // GetMessages 获取所有消息（用于 Agent）
-func (s *Session) GetMessages() []struct {
-	Role    string
-	Content string
-} {
-	result := make([]struct {
-		Role    string
-		Content string
-	}, 0, len(s.Messages))
+func (s *Session) GetMessages() []agent.Message {
+	result := make([]agent.Message, 0, len(s.Messages))
 
 	for _, m := range s.Messages {
-		result = append(result, struct {
-			Role    string
-			Content string
-		}{
+		result = append(result, agent.Message{
 			Role:    m.Role,
 			Content: m.Content,
 		})
