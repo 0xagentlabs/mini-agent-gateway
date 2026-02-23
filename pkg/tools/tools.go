@@ -10,8 +10,6 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-
-	"github.com/sashabaranov/go-openai"
 )
 
 // Handler 工具处理函数类型
@@ -23,6 +21,19 @@ type Tool struct {
 	Description string
 	Parameters  map[string]interface{}
 	Handler     Handler
+}
+
+// ToolDefinition LLM 工具定义 (OpenAI 格式)
+type ToolDefinition struct {
+	Type     string           `json:"type"`
+	Function FunctionDefinition `json:"function"`
+}
+
+// FunctionDefinition 函数定义
+type FunctionDefinition struct {
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Parameters  map[string]interface{} `json:"parameters"`
 }
 
 // Registry 工具注册表
@@ -163,12 +174,12 @@ func (r *Registry) Register(tool Tool) {
 }
 
 // GetDefinitions 获取工具定义（用于 Function Calling）
-func (r *Registry) GetDefinitions() []openai.Tool {
-	defs := make([]openai.Tool, 0, len(r.tools))
+func (r *Registry) GetDefinitions() []ToolDefinition {
+	defs := make([]ToolDefinition, 0, len(r.tools))
 	for _, tool := range r.tools {
-		defs = append(defs, openai.Tool{
-			Type: openai.ToolTypeFunction,
-			Function: &openai.FunctionDefinition{
+		defs = append(defs, ToolDefinition{
+			Type: "function",
+			Function: FunctionDefinition{
 				Name:        tool.Name,
 				Description: tool.Description,
 				Parameters:  tool.Parameters,
@@ -203,7 +214,7 @@ func isSafeCommand(cmd string) bool {
 func duckduckgoSearch(query string) (string, error) {
 	// 使用 DuckDuckGo HTML 版本
 	searchURL := fmt.Sprintf("https://html.duckduckgo.com/html/?q=%s", url.QueryEscape(query))
-	
+
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get(searchURL)
 	if err != nil {
