@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/0xagentlabs/mini-agent-gateway/pkg/tools"
+	"github.com/0xagentlabs/mini-agent-gateway/pkg/skills"
 )
 
 // LLMClient 轻量级 OpenAI 兼容客户端
@@ -38,9 +38,9 @@ func NewLLMClient(baseURL, apiKey, model string) *LLMClient {
 
 // ChatCompletionRequest OpenAI 聊天完成请求
 type ChatCompletionRequest struct {
-	Model    string           `json:"model"`
-	Messages []Message        `json:"messages"`
-	Tools    []tools.ToolDefinition `json:"tools,omitempty"`
+	Model    string                   `json:"model"`
+	Messages []Message                `json:"messages"`
+	Tools    []map[string]interface{} `json:"tools,omitempty"`
 }
 
 // ChatCompletionResponse OpenAI 聊天完成响应
@@ -71,7 +71,7 @@ type Message struct {
 }
 
 // Chat 发送聊天请求
-func (c *LLMClient) Chat(ctx context.Context, messages []Message, tools []tools.ToolDefinition) (*ChatCompletionResponse, error) {
+func (c *LLMClient) Chat(ctx context.Context, messages []Message, tools []map[string]interface{}) (*ChatCompletionResponse, error) {
 	reqBody := ChatCompletionRequest{
 		Model:    c.model,
 		Messages: messages,
@@ -114,7 +114,7 @@ func (c *LLMClient) Chat(ctx context.Context, messages []Message, tools []tools.
 // Agent 核心智能体
 type Agent struct {
 	client *LLMClient
-	tools  *tools.Registry
+	skills *skills.Registry
 }
 
 // New 创建 Agent 实例
@@ -123,22 +123,96 @@ func New(apiKey string) *Agent {
 	baseURL := getEnv("OPENAI_BASE_URL", "https://api.openai.com/v1")
 	model := getEnv("OPENAI_MODEL", "gpt-4o-mini")
 
+	// 创建技能注册表
+	skillsReg := skills.NewRegistry()
+	
+	// 加载内置技能
+	loadBuiltinSkills(skillsReg)
+	
+	// 从目录加载技能
+	skillsDir := getEnv("SKILLS_DIR", "./skills")
+	if err := skillsReg.LoadFromDir(skillsDir); err != nil {
+		fmt.Printf("加载技能目录失败: %v\n", err)
+	}
+
 	return &Agent{
 		client: NewLLMClient(baseURL, apiKey, model),
-		tools:  tools.NewRegistry(),
+		skills: skillsReg,
 	}
+}
+
+// loadBuiltinSkills 加载内置技能
+func loadBuiltinSkills(r *skills.Registry) {
+	// 文件系统技能
+	fsTools := []skills.ToolDefinition{
+		{
+			Name:        "read",
+			Description: "读取文件内容",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"path": map[string]string{
+						"type":        "string",
+						"description": "文件路径",
+					},
+				},
+				"required": []string{"path"},
+			},
+		},
+		{
+			Name:        "write",
+			Description: "写入文件内容",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"path": map[string]string{
+						"type":        "string",
+						"description": "文件路径",
+					},
+					"content": map[string]string{
+						"type":        "string",
+						"description": "文件内容",
+					},
+				},
+				"required": []string{"path", "content"},
+			},
+		},
+		{
+			Name:        "exec",
+			Description: "执行 shell 命令",
+			Parameters: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"command": map[string]string{
+						"type":        "string",
+						"description": "要执行的命令",
+					},
+				},
+				"required": []string{"command"},
+			},
+		},
+	}
+	r.RegisterBuiltinSkill("fs", "文件系统操作", fsTools)
 }
 
 // Run 执行 Agent Loop
 func (a *Agent) Run(ctx context.Context, history []Message) (string, error) {
 	// 构建系统消息
+	systemMsg := a.systemPrompt()
+	
+	// 如果有技能，添加到系统提示词
+	skillsDesc := a.getSkillsDescription()
+	if skillsDesc != "" {
+		systemMsg += "\n\n" + skillsDesc
+	}
+	
 	messages := []Message{
-		{Role: "system", Content: a.systemPrompt()},
+		{Role: "system", Content: systemMsg},
 	}
 	messages = append(messages, history...)
 
-	// 转换工具定义
-	toolDefs := a.tools.GetDefinitions()
+	// 获取所有工具定义
+	toolDefs := a.skills.GetToolDefinitions()
 
 	// 调用 LLM
 	resp, err := a.client.Chat(ctx, messages, toolDefs)
@@ -171,7 +245,7 @@ func (a *Agent) handleToolCalls(ctx context.Context, messages []Message, toolCal
 
 	// 执行每个工具调用
 	for _, tc := range toolCalls {
-		result, err := a.tools.Execute(tc.Function.Name, tc.Function.Arguments)
+		result, err := a.skills.Execute(tc.Function.Name, tc.Function.Arguments)
 		if err != nil {
 			result = fmt.Sprintf("错误: %v", err)
 		}
@@ -199,14 +273,32 @@ func (a *Agent) handleToolCalls(ctx context.Context, messages []Message, toolCal
 
 // systemPrompt 系统提示词
 func (a *Agent) systemPrompt() string {
-	return `你是一个有用的 AI 助手。你可以使用以下工具来帮助用户：
+	return `你是一个有用的 AI 助手。你可以使用技能系统提供的工具来帮助用户。`
+}
 
-1. read_file - 读取文件内容
-2. write_file - 写入文件内容  
-3. exec_shell - 执行 shell 命令
-4. web_search - 搜索网络信息
+// getSkillsDescription 获取技能描述
+func (a *Agent) getSkillsDescription() string {
+	tools := a.skills.GetToolDefinitions()
+	if len(tools) == 0 {
+		return ""
+	}
+	
+	desc := "可用工具:\n"
+	for _, tool := range tools {
+		if fn, ok := tool["function"].(map[string]interface{}); ok {
+			name := fn["name"].(string)
+			description := fn["description"].(string)
+			desc += fmt.Sprintf("- %s: %s\n", name, description)
+		}
+	}
+	return desc
+}
 
-请根据用户需求选择合适的工具。如果不确定，可以直接回答。`
+// Close 关闭 Agent
+func (a *Agent) Close() {
+	if a.skills != nil {
+		a.skills.Close()
+	}
 }
 
 // getEnv 获取环境变量，如果不存在返回默认值

@@ -1,0 +1,9 @@
+{
+  "name": "github-mcp",
+  "description": "GitHub MCP 服务器 - 操作 GitHub API",
+  "version": "1.0.0",
+  "mcp": {
+    "command": "npx",
+    "args": ["-y", "@modelcontextprotocol/server-github"]
+  }
+}

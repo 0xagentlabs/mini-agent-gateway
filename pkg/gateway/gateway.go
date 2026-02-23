@@ -66,8 +66,18 @@ func (g *Gateway) processMessage(msg Message) {
 	
 	log.Printf("[%s] %s: %s", msg.Channel, msg.UserID, msg.Text)
 
+	// 转换消息格式
+	sessionMsgs := sess.GetMessages()
+	agentMsgs := make([]agent.Message, len(sessionMsgs))
+	for i, m := range sessionMsgs {
+		agentMsgs[i] = agent.Message{
+			Role:    m.Role,
+			Content: m.Content,
+		}
+	}
+
 	// 调用 Agent 处理
-	reply, err := g.agent.Run(ctx, sess.GetMessages())
+	reply, err := g.agent.Run(ctx, agentMsgs)
 	if err != nil {
 		log.Printf("Agent 错误: %v", err)
 		reply = "抱歉，处理消息时出错了"

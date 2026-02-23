@@ -1,0 +1,53 @@
+{
+  "name": "filesystem",
+  "description": "文件系统操作技能",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "read",
+      "description": "读取文件内容",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "文件路径"
+          }
+        },
+        "required": ["path"]
+      }
+    },
+    {
+      "name": "write",
+      "description": "写入文件内容",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "文件路径"
+          },
+          "content": {
+            "type": "string",
+            "description": "文件内容"
+          }
+        },
+        "required": ["path", "content"]
+      }
+    },
+    {
+      "name": "list",
+      "description": "列出目录内容",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "目录路径"
+          }
+        },
+        "required": ["path"]
+      }
+    }
+  ]
+}
