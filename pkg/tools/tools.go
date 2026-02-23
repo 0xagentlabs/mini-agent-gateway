@@ -189,6 +189,23 @@ func (r *Registry) GetDefinitions() []ToolDefinition {
 	return defs
 }
 
+// GetToolDefinitions 获取工具定义（map 格式，用于 LLM）
+func (r *Registry) GetToolDefinitions() []map[string]interface{} {
+	defs := make([]map[string]interface{}, 0, len(r.tools))
+	for _, tool := range r.tools {
+		def := map[string]interface{}{
+			"type": "function",
+			"function": map[string]interface{}{
+				"name":        tool.Name,
+				"description": tool.Description,
+				"parameters":  tool.Parameters,
+			},
+		}
+		defs = append(defs, def)
+	}
+	return defs
+}
+
 // Execute 执行工具
 func (r *Registry) Execute(name string, args string) (string, error) {
 	tool, ok := r.tools[name]
