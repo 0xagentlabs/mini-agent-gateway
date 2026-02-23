@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/xingyue/mini-agent-gateway/pkg/gateway"
+	"github.com/0xcevin/mini-agent-gateway/pkg/gateway"
 )
 
 // TelegramAdapter Telegram 频道适配器

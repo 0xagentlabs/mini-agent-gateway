@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/xingyue/mini-agent-gateway/pkg/agent"
-	"github.com/xingyue/mini-agent-gateway/pkg/session"
+	"github.com/0xcevin/mini-agent-gateway/pkg/agent"
+	"github.com/0xcevin/mini-agent-gateway/pkg/session"
 )
 
 // Message 标准化消息格式

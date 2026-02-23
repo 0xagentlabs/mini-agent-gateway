@@ -1,4 +1,4 @@
-module github.com/xingyue/mini-agent-gateway
+module github.com/0xcevin/mini-agent-gateway
 
 go 1.21
 
