@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/0xcevin/mini-agent-gateway/pkg/agent"
-	"github.com/0xcevin/mini-agent-gateway/pkg/session"
+	"github.com/openclaw/mini-agent-gateway/pkg/agent"
+	"github.com/openclaw/mini-agent-gateway/pkg/session"
 )
 
 // Message 标准化消息格式
