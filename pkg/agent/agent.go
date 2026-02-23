@@ -193,7 +193,7 @@ func (a *Agent) buildSystemPrompt() string {
 `
 	
 	// 添加技能说明
-	skillsPrompt := a.skillReg.BuildPrompt()
+	skillsPrompt := a.skillReg.BuildSystemPrompt()
 	if skillsPrompt != "" {
 		prompt += "\n\n" + skillsPrompt
 	}
