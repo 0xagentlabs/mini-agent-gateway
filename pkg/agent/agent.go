@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/sashabaranov/go-openai"
-	"github.com/openclaw/mini-agent-gateway/pkg/tools"
+	"github.com/0xagentlabs/mini-agent-gateway/pkg/tools"
 )
 
 // Agent 是核心智能体

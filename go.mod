@@ -1,4 +1,4 @@
-module github.com/openclaw/mini-agent-gateway
+module github.com/0xagentlabs/mini-agent-gateway
 
 go 1.21
 

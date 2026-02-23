@@ -7,8 +7,8 @@ import (
 	"syscall"
 
 	"github.com/joho/godotenv"
-	"github.com/openclaw/mini-agent-gateway/pkg/channel"
-	"github.com/openclaw/mini-agent-gateway/pkg/gateway"
+	"github.com/0xagentlabs/mini-agent-gateway/pkg/channel"
+	"github.com/0xagentlabs/mini-agent-gateway/pkg/gateway"
 )
 
 func main() {
